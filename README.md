@@ -129,7 +129,8 @@ for ii from 0 to (width * height * channels) do
 end
 ```
 
-## Experimental setup
+### Demo on YouTube
+https://www.youtube.com/watch?v=LHSSxSk55hQ  with the following experimental setup:  
 
 ### Hardware setup
 * Notebook Intel Core i7-3630QM and CPU @ 3.40 GHz, 4 cores and 8 threads, Ram 6 GB
@@ -141,9 +142,4 @@ end
 * host compiler GCC 5.1
 * device compiler NVCC 8.0.44 (with parameters: -O3 for host and device optimizations, -sm_30 for compute capability 3.0 support, -use_fast_math for fast math functions support)
 
-
-PDF version: https://goo.gl/mNM2Ky
-
 Demo on YouTube using Jetson TK1: https://www.youtube.com/watch?v=Vje8XCtam7A
-
-Demo on YouTube using an I7-3610QM @ 2.3 GHz, GPU Nvidia GeForce 640M: https://www.youtube.com/watch?v=LHSSxSk55hQ
