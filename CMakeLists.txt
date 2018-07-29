@@ -28,5 +28,5 @@ if(UNIX OR APPLE)
   list(APPEND CUDA_NVCC_FLAGS "-Xcompiler;-fPIC;")
 endif()
 
-file( GLOB src main.cu histoEqCuda.h histoEqCpu.h )
+file( GLOB src src/main.cu src/histoEqCuda.h src/histoEqCpu.h )
 cuda_add_executable(rtheq  ${src})
