@@ -6,7 +6,7 @@ CUDA_LIBS = -lcudart -lcuda
 NVCC_OPTS=-O3 -x cu -use_fast_math 
 
 all:
-	nvcc -o out  $(NVCC_OPTS) src/main.cu -I $(CUDA_INCLUDEPATH) $(OPENCV_LIBS) $(CUDA_LIBS) -L$(CUDA_LIBPATH)
+	nvcc -o out  $(NVCC_OPTS) src/main.cpp -I $(CUDA_INCLUDEPATH) $(OPENCV_LIBS) $(CUDA_LIBS) -L$(CUDA_LIBPATH)
 
 clean:
 	rm  out
