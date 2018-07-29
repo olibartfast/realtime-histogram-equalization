@@ -1,3 +1,12 @@
+## dependencies
+tested on Ubuntu 16.04  
+CUDA(tested 9.2) OpenCV(tested 3.3.1) 
+
+## compilation
+make
+
+
+
 # Real time histogram equalization
 
 The purpose of this project is to implement an efficient histogramming equalization algorithm for an input frame acquired from a webcam device in real time, the image is represented as RGB unsigned char values, it will be converted to grayscale and then computed the histogram. Based on the histogram, will be obtained an equalization function then applied to the original image to get the color corrected image, basically fulfilling the following steps:
