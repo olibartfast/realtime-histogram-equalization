@@ -3,7 +3,13 @@ tested on Ubuntu 16.04
 CUDA(tested 9.2) OpenCV(tested 3.3.1) 
 
 ## compilation
-make
+### with Makefile:  
+make  
+### with Cmake:  
+mkdir build  
+cd build  
+cmake ..  
+make  
 
 
 
