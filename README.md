@@ -137,7 +137,7 @@ https://www.youtube.com/watch?v=LHSSxSk55hQ  with the following experimental set
 * GPU Nvidia GeForce GT 640M, 709 MHz, 384 CUDA cores, Ram 2 GB
 
 ### Software setup
-* Operating System Linux Archlinux (linux kernel version)
+* Operating System Linux Archlinux
 * CUDA SDK 8.0
 * host compiler GCC 5.1
 * device compiler NVCC 8.0.44 (with parameters: -O3 for host and device optimizations, -sm_30 for compute capability 3.0 support, -use_fast_math for fast math functions support)
