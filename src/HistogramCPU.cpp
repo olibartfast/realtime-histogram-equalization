@@ -1,31 +1,27 @@
 #include "HistogramCPU.hpp"
-#include <algorithm>
-#include <cstring>
-
+#include <stdexcept>
+#include <numeric>
 
 void HistogramCPU::equalize(cv::Mat& outputImage, const cv::Mat& inputImage) {
+    if (inputImage.empty() || inputImage.type() != CV_8UC3) {
+        throw std::invalid_argument("Input image must be a non-empty 8-bit, 3-channel image");
+    }
+
     int width = inputImage.cols;
     int height = inputImage.rows;
-    int channels = inputImage.channels();
+    int total_pixels = width * height;
 
-    std::vector<unsigned char> grayImage(width * height);
-    std::vector<unsigned int> histogram(256, 0);
-    std::vector<float> cdf(256);
+    std::vector<unsigned char> grayImage(total_pixels);
+    std::vector<unsigned int> histogram(HISTOGRAM_LENGTH, 0);
+    std::vector<float> cdf(HISTOGRAM_LENGTH);
 
-    // Convert to grayscale
-    h_RGBtoGS(grayImage.data(), inputImage.data, height, width);
+    h_RGBtoGS(grayImage, inputImage);
+    h_Histogram(histogram, grayImage);
+    h_Cdf(cdf, histogram, width, height);
+    float cdfmin = h_MinOfCdf(cdf);
 
-    // Compute histogram
-    h_Histogram(histogram.data(), grayImage.data(), width, height);
-
-    // Compute CDF
-    h_Cdf(cdf.data(), histogram.data(), width, height);
-
-    // Find minimum of CDF
-    float cdfmin = h_MinOfCdf(cdf.data());
-
-    // Apply histogram equalization
-    h_Hef(outputImage.data, cdf.data(), cdfmin, width, height, channels);
+    outputImage = inputImage.clone();
+    h_Hef(outputImage, cdf, cdfmin);
 }
 
 float HistogramCPU::h_p(unsigned int x, int width, int height) {
@@ -36,38 +32,49 @@ float HistogramCPU::h_clamp(float x, float start, float end) {
     return std::min(std::max(x, start), end);
 }
 
-void HistogramCPU::h_RGBtoGS(unsigned char* grayImage, unsigned char* ucharImage, int height, int width) {
-    for (int ii = 0; ii < height; ii++) {
-        for (int jj = 0; jj < width; jj++) {
-            int idx = ii * width + jj;
-            unsigned char r = ucharImage[3 * idx];
-            unsigned char g = ucharImage[3 * idx + 1];
-            unsigned char b = ucharImage[3 * idx + 2];
-            grayImage[idx] = static_cast<unsigned char>(0.21f * r + 0.71f * g + 0.07f * b);
+void HistogramCPU::h_RGBtoGS(std::vector<unsigned char>& grayImage, const cv::Mat& inputImage) const {
+    int width = inputImage.cols;
+    int height = inputImage.rows;
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            const cv::Vec3b& pixel = inputImage.at<cv::Vec3b>(i, j);
+            grayImage[i * width + j] = static_cast<unsigned char>(
+                0.21f * pixel[2] + 0.71f * pixel[1] + 0.07f * pixel[0]
+            );
         }
     }
 }
 
-void HistogramCPU::h_Histogram(unsigned int* histogram, unsigned char* grayImage, int width, int height) {
-    std::memset(histogram, 0, 256 * sizeof(unsigned int));
-    for (int ii = 0; ii < width * height; ii++) {
-        histogram[grayImage[ii]]++;
+void HistogramCPU::h_Histogram(std::vector<unsigned int>& histogram, const std::vector<unsigned char>& grayImage) const {
+    for (unsigned char pixel : grayImage) {
+        ++histogram[pixel];
     }
 }
 
-void HistogramCPU::h_Cdf(float* cdf, unsigned int* histogram, int width, int height) {
+void HistogramCPU::h_Cdf(std::vector<float>& cdf, const std::vector<unsigned int>& histogram, int width, int height) const {
     cdf[0] = h_p(histogram[0], width, height);
-    for (int ii = 1; ii < 256; ii++) {
-        cdf[ii] = cdf[ii - 1] + h_p(histogram[ii], width, height);
+    for (size_t i = 1; i < HISTOGRAM_LENGTH; ++i) {
+        cdf[i] = cdf[i-1] + h_p(histogram[i], width, height);
     }
 }
 
-float HistogramCPU::h_MinOfCdf(float* cdf) {
-    return *std::min_element(cdf, cdf + 256);
+float HistogramCPU::h_MinOfCdf(const std::vector<float>& cdf) const {
+    return *std::min_element(cdf.begin(), cdf.end());
 }
 
-void HistogramCPU::h_Hef(unsigned char* ucharImage, float* cdf, float cdfmin, int width, int height, int channels) {
-    for (int ii = 0; ii < (width * height * channels); ii++) {
-        ucharImage[ii] = static_cast<unsigned char>(h_clamp(255.0f * (cdf[ucharImage[ii]] - cdfmin) / (1.0f - cdfmin), 0.0f, 255.0f));
+void HistogramCPU::h_Hef(cv::Mat& outputImage, const std::vector<float>& cdf, float cdfmin) const {
+    int width = outputImage.cols;
+    int height = outputImage.rows;
+    int channels = outputImage.channels();
+
+    for (int j = 0; j < height; ++j) {
+        for (int i = 0; i < width; ++i) {
+            int z = (j * width + i) * channels;
+            for (int c = 0; c < channels; ++c) {
+                outputImage.data[z + c] = static_cast<unsigned char>(
+                    h_clamp(255.0f * (cdf[outputImage.data[z + c]] - cdfmin) / (1.0f - cdfmin), 0.0f, 255.0f)
+                );
+            }
+        }
     }
 }

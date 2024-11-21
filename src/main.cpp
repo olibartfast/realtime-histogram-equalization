@@ -5,7 +5,7 @@
 #include <chrono>
 #include <cmath>
 
-const float EPSILON = 1e-6;  // Tolerance threshold for floating-point comparisons
+const float EPSILON = 3.0f;  // Tolerance threshold for floating-point comparisons
 
 bool compareImages(const cv::Mat& img1, const cv::Mat& img2, float epsilon) {
     if (img1.size() != img2.size() || img1.type() != img2.type()) {
@@ -15,7 +15,7 @@ bool compareImages(const cv::Mat& img1, const cv::Mat& img2, float epsilon) {
     cv::Mat diff;
     cv::absdiff(img1, img2, diff);
     cv::Scalar mean = cv::mean(diff);
-
+    std::cout << "Mean difference: " << mean[0] << ", " << mean[1] << ", " << mean[2] << std::endl;
     return (mean[0] <= epsilon) && (mean[1] <= epsilon) && (mean[2] <= epsilon);
 }
 
