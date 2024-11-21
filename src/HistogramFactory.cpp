@@ -1,4 +1,3 @@
-// HistogramFactory.cpp
 #include "HistogramFactory.hpp"
 #include "HistogramCPU.hpp"
 #include "HistogramGPU.hpp"
