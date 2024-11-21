@@ -1,17 +1,4 @@
-/*
- * histoEqCuda.h
- *
- *  Created on: Oct 1, 2016
- *      Author: x
- */
-
-#ifndef HISTOEQCUDA_H_
-#define HISTOEQCUDA_H_
-
-#include <cuda.h>
-#include <cuda_runtime.h>
-#include <cuda_runtime_api.h>
-#include <stdio.h>
+#include "histoEqCuda.cuh"
 
 #define HISTOGRAM_LENGTH 256
 #define BSIZE 1024
@@ -179,7 +166,3 @@ __global__ void d_Hef(unsigned char* ucharImage, float *cdf, float cdfmin,
 
 }
 
-
-
-
-#endif /* HISTOEQCUDA_H_ */
