@@ -1,9 +1,9 @@
-// main.cpp
 #include "HistogramFactory.hpp"
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <chrono>
 #include <cmath>
+#include <random>
 
 const float EPSILON = 3.0f;  // Tolerance threshold for floating-point comparisons
 
@@ -28,30 +28,19 @@ void runAndMeasure(const std::unique_ptr<Histogram>& equalizer, const cv::Mat& i
     std::cout << type << " implementation took " << elapsed.count() << " seconds" << std::endl;
 }
 
-int main(int argc, char* argv[]) {
-    if (argc != 3) {
-        std::cout << "Usage: " << argv[0] << " <input_image> <output_prefix>" << std::endl;
-        return 1;
-    }
 
-    std::string inputPath = argv[1];
-    std::string outputPrefix = argv[2];
-
-    cv::Mat inputImage = cv::imread(inputPath, cv::IMREAD_COLOR);
-    if (inputImage.empty()) {
-        std::cerr << "Error: Could not read input image" << std::endl;
-        return 1;
-    }
-
-    cv::Mat outputCPU(inputImage.rows, inputImage.cols, inputImage.type());
-    cv::Mat outputGPU(inputImage.rows, inputImage.cols, inputImage.type());
+void processImage(const cv::Mat& input,  const std::string& outputPrefix) 
+{
+   
+    cv::Mat outputCPU(input.rows, input.cols, input.type());
+    cv::Mat outputGPU(input.rows, input.cols, input.type());
 
     try {
         auto cpuEqualizer = HistogramFactory::createHistogram("CPU");
         auto gpuEqualizer = HistogramFactory::createHistogram("GPU");
 
-        runAndMeasure(cpuEqualizer, inputImage, outputCPU, "CPU");
-        runAndMeasure(gpuEqualizer, inputImage, outputGPU, "GPU");
+        runAndMeasure(cpuEqualizer, input, outputCPU, "CPU");
+        runAndMeasure(gpuEqualizer, input, outputGPU, "GPU");
 
         bool resultsEqual = compareImages(outputCPU, outputGPU, EPSILON);
         
@@ -73,8 +62,76 @@ int main(int argc, char* argv[]) {
 
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
+        return;
+    }
+
+}
+
+void processVideo(const std::string& inputPath, const std::string& outputPrefix) {
+    cv::VideoCapture capture(inputPath);
+    int frame_width = static_cast<int>(capture.get(cv::CAP_PROP_FRAME_WIDTH));
+    int frame_height = static_cast<int>(capture.get(cv::CAP_PROP_FRAME_HEIGHT));
+    double fps = capture.get(cv::CAP_PROP_FPS);
+
+    cv::VideoWriter outputVideo;
+    outputVideo.open(outputPrefix + "_comparison.mp4", cv::VideoWriter::fourcc('m', 'p', '4', 'v'), fps, cv::Size(frame_width * 2, frame_height));
+
+
+    auto gpuEqualizer = HistogramFactory::createHistogram("GPU");
+
+    cv::Mat frame, outputGPU;
+
+
+    capture.read(frame);
+    outputGPU = frame.clone();
+
+    capture.set(cv::CAP_PROP_POS_FRAMES, 0); // Reset to beginning for video processing
+
+    while (true) {
+        if (!capture.read(frame)) {
+            break;
+        }
+
+        outputGPU = frame.clone();
+        gpuEqualizer->equalize(outputGPU, frame);
+        cv::Mat comparisonFrame;    
+        cv::hconcat(frame, outputGPU, comparisonFrame); 
+        outputVideo.write(comparisonFrame);
+
+    }
+
+    outputVideo.release();
+    capture.release();
+    std::cout << "Comparison video saved: " << outputPrefix << "_comparison.mp4" << std::endl;
+}
+
+
+int main(int argc, char* argv[]) {
+    if (argc != 3) {
+        std::cout << "Usage: " << argv[0] << " <input_image> <output_prefix>" << std::endl;
         return 1;
     }
 
+    std::string inputPath = argv[1];
+    std::string outputPrefix = argv[2];
+
+    // Check if input path is image or video
+    if (inputPath.find(".jpg") != std::string::npos || inputPath.find(".png") != std::string::npos || inputPath.find(".jpeg") != std::string::npos) {
+
+        cv::Mat inputImage = cv::imread(inputPath, cv::IMREAD_COLOR);
+        if (inputImage.empty()) {
+            std::cerr << "Error: Could not read input image" << std::endl;
+            return 1;
+        }
+
+        processImage(inputImage, outputPrefix);
+
+    }
+    else 
+    {
+        processVideo(inputPath, outputPrefix); 
+    }
     return 0;
 }
+
+
