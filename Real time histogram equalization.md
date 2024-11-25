@@ -34,7 +34,7 @@ _**Picture 3: For an image that is not color equalized we expect the curve to be
 _**Picture 4: The computed transformation is applied to the original image to produce the equalized image**_  
 
 
-![Alt Text](./images/non-linear-cdf.png)  
+![Alt Text](./images/linearized-cdf.png)  
 _**Picture 5: the desired CDF being an almost linear function after histogram equalization**_
 
 
